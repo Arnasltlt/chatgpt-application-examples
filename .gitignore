@@ -72,6 +72,9 @@ lerna-debug.log*
 ngrok.yml
 ngrok.log
 
+# IDE
+.cursor/
+
 # Temporary files
 *.tmp
 *.temp

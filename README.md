@@ -78,7 +78,7 @@ Please feel free to open an issue or submit a pull request.
 
 ## Applications
 
-*Applications will be added to this section as they are developed.*
+- [Your AI Council](./your-ai-council/README.md) — Friendly hello-world ChatGPT app scaffolding the repository.
 
 ## Resources
 

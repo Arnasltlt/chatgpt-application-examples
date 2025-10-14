@@ -911,6 +911,9 @@ ngrok start mcp
 - Advanced widget patterns (forms, interactive charts)
 - Performance optimization for large data sets
 - WebSocket support for real-time updates
+- **CRITICAL - Start Simple**: For hello-world examples and learning MCP, implement text-only tools first. Widgets require deep ChatGPT backend integration via `/backend-api/ecosystem/widget` with specific resource formats. Text responses using `CallToolResult` with `content` and `structuredContent` are reliable and sufficient for learning.
+- **Logging Strategy**: Add structured logging to `CallToolRequest`, `ReadResourceRequest`, and key server lifecycle events. Use Python's `logging.info()` with context extras for debugging tool invocations and MCP flows.
+- **Asset Handling**: When implementing widgets, inline CSS/JS directly in HTML responses to avoid CORS issues. Build assets with Vite, read them at runtime, and embed in `<style>` and `<script>` tags.
 
 ---
 
