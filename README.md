@@ -46,7 +46,7 @@ app-name/
 
 1. **Clone this repository:**
    ```bash
-   git clone https://github.com/yourusername/chatgpt-application-examples.git
+   git clone https://github.com/Arnasltlt/chatgpt-application-examples.git
    cd chatgpt-application-examples
    ```
 
