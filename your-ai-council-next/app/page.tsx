@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useMemo } from "react";
-import { useOpenExternal, useWidgetProps } from "./hooks";
+import { useOpenAIGlobal, useOpenExternal, useWidgetProps } from "./hooks";
 
 function createFallbackAvatar(initial: string, from: string, to: string) {
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='112' height='112' viewBox='0 0 112 112'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='${from}'/><stop offset='100%' stop-color='${to}'/></linearGradient></defs><rect width='112' height='112' rx='56' fill='url(%23g)'/><text x='50%' y='58%' font-family='system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' font-size='48' fill='white' text-anchor='middle'>${initial}</text></svg>`;
@@ -80,7 +80,20 @@ function resolveAvatar(member: CouncilMember) {
   return FALLBACK_AVATARS[member.name] ?? createFallbackAvatar(member.name.charAt(0).toUpperCase(), "#d9e2ff", "#9bb3ff");
 }
 
-function CouncilMemberCard({ member }: { member: CouncilMember }) {
+type ThemeTokens = {
+  cardBorder: string;
+  cardBackground: string;
+  primaryText: string;
+  secondaryText: string;
+  badgeBorder: string;
+  badgeBackground: string;
+  badgeText: string;
+  buttonBackground: string;
+  buttonHover: string;
+  buttonText: string;
+};
+
+function CouncilMemberCard({ member, tokens }: { member: CouncilMember; tokens: ThemeTokens }) {
   const initial = useMemo(() => member.name.charAt(0), [member.name]);
   const hasCta = Boolean(member.ctaLabel && member.ctaUrl);
   const resolvedAvatar = resolveAvatar(member);
@@ -88,7 +101,7 @@ function CouncilMemberCard({ member }: { member: CouncilMember }) {
 
   return (
     <article
-      className="flex h-full w-full max-w-sm flex-col items-center gap-5 rounded-2xl border border-[rgb(229,232,235)] bg-white p-6 text-center shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-transform duration-200 hover:-translate-y-1"
+      className={`flex h-full w-full max-w-[312px] flex-col items-center gap-4 rounded-3xl border ${tokens.cardBorder} ${tokens.cardBackground} px-6 pb-6 pt-7 text-center shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-transform duration-200 hover:-translate-y-1`}
       aria-label={`${member.name}, ${member.role}`}
     >
       <div className="flex flex-col items-center gap-3">
@@ -108,19 +121,19 @@ function CouncilMemberCard({ member }: { member: CouncilMember }) {
           </div>
         )}
         <div className="flex flex-col items-center gap-2">
-          <h3 className="text-base font-semibold text-[rgb(22,30,45)]">{member.name}</h3>
-          <span className="rounded-full border border-[rgb(209,214,224)] bg-[rgb(244,246,250)] px-3 py-1 text-xs font-medium text-[rgb(80,90,110)]">
+          <h3 className={`text-base font-semibold ${tokens.primaryText}`}>{member.name}</h3>
+          <span className={`rounded-full border ${tokens.badgeBorder} ${tokens.badgeBackground} px-3 py-1 text-xs font-medium ${tokens.badgeText}`}>
             {member.role}
           </span>
         </div>
       </div>
-      <p className="text-sm leading-6 text-[rgb(71,82,105)]">{member.opinion}</p>
+      <p className={`text-sm leading-6 ${tokens.secondaryText}`}>{member.opinion}</p>
       {hasCta && (
         <div className="mt-2 w-full">
           <button
             type="button"
             onClick={() => openExternal(member.ctaUrl!)}
-            className="inline-flex w-full items-center justify-center rounded-xl bg-[rgb(35,99,255)] px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[rgb(27,85,226)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(144,180,255)]"
+            className={`inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgba(79,119,255,0.6)] ${tokens.buttonBackground} ${tokens.buttonText} ${tokens.buttonHover}`}
           >
             {member.ctaLabel}
           </button>
@@ -141,6 +154,8 @@ type ToolOutputShape = {
 
 export default function Home() {
   const toolOutput = useWidgetProps<ToolOutputShape>({});
+  const theme = useOpenAIGlobal("theme") ?? "light";
+  const maxHeight = useOpenAIGlobal("maxHeight") ?? 640;
 
   const data: CouncilResponse | null = useMemo(() => {
     if (!toolOutput) {
@@ -176,17 +191,44 @@ export default function Home() {
     return <LoadingState />;
   }
 
+  const tokens: ThemeTokens = theme === "dark"
+    ? {
+        cardBorder: "border-[rgba(255,255,255,0.08)]",
+        cardBackground: "bg-[rgba(26,30,42,0.92)]",
+        primaryText: "text-white",
+        secondaryText: "text-[rgba(235,235,245,0.7)]",
+        badgeBorder: "border-[rgba(255,255,255,0.18)]",
+        badgeBackground: "bg-[rgba(255,255,255,0.08)]",
+        badgeText: "text-[rgba(235,235,245,0.85)]",
+        buttonBackground: "bg-white/90",
+        buttonHover: "hover:bg-white",
+        buttonText: "text-[rgb(25,74,216)]",
+      }
+    : {
+        cardBorder: "border-[rgb(229,232,235)]",
+        cardBackground: "bg-white",
+        primaryText: "text-[rgb(22,30,45)]",
+        secondaryText: "text-[rgb(71,82,105)]",
+        badgeBorder: "border-[rgb(209,214,224)]",
+        badgeBackground: "bg-[rgb(244,246,250)]",
+        badgeText: "text-[rgb(80,90,110)]",
+        buttonBackground: "bg-[rgb(35,99,255)]",
+        buttonHover: "hover:bg-[rgb(27,85,226)]",
+        buttonText: "text-white",
+      };
+
+  const isCompact = maxHeight < 600;
   return (
-    <div className="flex w-full justify-center px-4 py-6">
+    <div className={`flex w-full justify-center px-4 ${isCompact ? "py-4" : "py-6"}`}>
       <div className="flex w-full max-w-[1120px] flex-col items-center gap-6 text-center">
-        <header className="flex flex-col items-center gap-2 text-[rgb(22,30,45)]">
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-[rgb(108,118,139)]">
+        <header className={`flex flex-col items-center gap-2 ${tokens.primaryText}`}>
+          <p className="text-xs font-medium uppercase tracking-[0.12em] opacity-80">
             AI COUNCIL INSIGHTS
           </p>
           <h1 className="text-2xl font-semibold">
             Three advisors weigh in on “{data.question}”
           </h1>
-          <p className="text-sm text-[rgb(88,98,116)]">Compare perspectives at a glance before you follow up in chat.</p>
+          <p className={`text-sm ${tokens.secondaryText}`}>Compare perspectives at a glance before you follow up in chat.</p>
         </header>
 
         <section aria-label="Council member perspectives" className="relative">
@@ -199,7 +241,7 @@ export default function Home() {
                 key={`${member.name}-${index}`}
                 className="flex w-full justify-center md:min-w-[280px] md:max-w-[340px] md:flex-1 md:snap-center"
               >
-                <CouncilMemberCard member={member} />
+                <CouncilMemberCard member={member} tokens={tokens} />
               </li>
             ))}
           </ul>
