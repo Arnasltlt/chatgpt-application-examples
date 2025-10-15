@@ -3,6 +3,8 @@ node_modules/
 .pnp
 .pnp.js
 
+.cursor/ 
+
 # Python
 __pycache__/
 *.py[cod]
