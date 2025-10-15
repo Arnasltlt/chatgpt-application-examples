@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+
+The purpose of this project is to learn as much as possible when creating ChatGPT apps. We will be trying a lot of novel ideas and trying to use all the features that the SDK allows us. What's most important is that some kind of realization or best practice is actually captured in the @Best Practices.md   that is in the root of this repository. We will be working on a lot of projects, and as soon as something novel, something that is not known, or something that is surprising or a hurdle is overcome, we want to note that down. We want to note that down in a structured way. We don't want to overwhelm with details, but we do want it noted so that this mistake does not happen again.
+
+Most of the learning should happen after we write the code and test to see if its working. 
