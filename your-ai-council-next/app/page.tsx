@@ -5,21 +5,16 @@ import { useMemo } from "react";
 import { useOpenAIGlobal, useOpenExternal, useWidgetProps } from "./hooks";
 
 function createFallbackAvatar(initial: string, from: string, to: string) {
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='112' height='112' viewBox='0 0 112 112'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='${from}'/><stop offset='100%' stop-color='${to}'/></linearGradient></defs><rect width='112' height='112' rx='56' fill='url(%23g)'/><text x='50%' y='58%' font-family='system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' font-size='48' fill='white' text-anchor='middle'>${initial}</text></svg>`;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='${from}'/><stop offset='100%' stop-color='${to}'/></linearGradient></defs><rect width='120' height='120' rx='60' fill='url(%23g)'/><text x='50%' y='58%' font-family='system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' font-size='56' fill='white' text-anchor='middle'>${initial}</text></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
-
-const FALLBACK_AVATARS: Record<string, string> = {
-  "Dr. Elara Quinn": createFallbackAvatar("E", "#5a78ff", "#7865ff"),
-  "Professor Milo Tan": createFallbackAvatar("M", "#2693ff", "#40c4ff"),
-  "Strategist Reva Sol": createFallbackAvatar("R", "#f97794", "#f7b26a"),
-};
 
 type CouncilMember = {
   name: string;
   role: string;
   opinion: string;
   avatar?: string;
+  expertise?: number;
   ctaLabel?: string;
   ctaUrl?: string;
 };
@@ -33,30 +28,52 @@ const MOCK_RESPONSE: CouncilResponse = {
   question: "Should we expand into the EU market this quarter?",
   members: [
     {
-      name: "Dr. Elara Quinn",
-      role: "Ethics & Compliance",
+      name: "Dr. Sarah Chen",
+      role: "Strategic Advisor",
       opinion:
-        "Regulation is tightening—budget at least eight weeks so compliance and privacy reviews do not stall launch.",
-      ctaLabel: "View compliance checklist",
-      ctaUrl: "https://example.com/compliance",
+        "This is a great opportunity! Consider the long-term implications and stakeholder impact carefully. Timing is crucial—Q1 gives us runway to navigate regulatory compliance. Budget 8–12 weeks for market research and localization.",
+      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
+      expertise: 92,
+      ctaLabel: "View full assessment",
+      ctaUrl: "https://example.com/assessment",
     },
     {
-      name: "Professor Milo Tan",
-      role: "Data Science",
+      name: "Marcus Rodriguez",
+      role: "Technical Expert",
       opinion:
-        "Demand curves look strong; projections show breakeven within two quarters if we fund localized onboarding now.",
-      ctaLabel: "Open forecasting model",
-      ctaUrl: "https://example.com/forecast",
+        "From a technical standpoint, this is feasible. Focus on implementation challenges and scalability. Our infrastructure can handle 3x traffic by May. Prioritize GDPR compliance and ensure all data residency requirements are met.",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
+      expertise: 88,
+      ctaLabel: "Review technical spec",
+      ctaUrl: "https://example.com/tech-spec",
     },
     {
-      name: "Strategist Reva Sol",
-      role: "Growth Strategy",
+      name: "Alex Thompson",
+      role: "UX Specialist",
       opinion:
-        "Pilot in two markets first so we can iterate with real feedback without overextending commercial teams.",
-      ctaLabel: "See pilot playbook",
-      ctaUrl: "https://example.com/pilot",
+        "Users will love this approach if we prioritize solving real problems and delivering visible value. Conduct user testing in beta markets first. A phased rollout with strong localization will give us competitive advantage and reduce churn.",
+      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop",
+      expertise: 85,
+      ctaLabel: "See UX roadmap",
+      ctaUrl: "https://example.com/ux-roadmap",
     },
   ],
+};
+
+type ThemeTokens = {
+  cardBorder: string;
+  cardBackground: string;
+  primaryText: string;
+  secondaryText: string;
+  tertiaryText: string;
+  badgeBorder: string;
+  badgeBackground: string;
+  badgeText: string;
+  buttonBackground: string;
+  buttonHover: string;
+  buttonText: string;
+  expertiseBg: string;
+  expertiseText: string;
 };
 
 function LoadingState() {
@@ -77,68 +94,61 @@ function resolveAvatar(member: CouncilMember) {
   if (member.avatar) {
     return member.avatar;
   }
-  return FALLBACK_AVATARS[member.name] ?? createFallbackAvatar(member.name.charAt(0).toUpperCase(), "#d9e2ff", "#9bb3ff");
+  return createFallbackAvatar(member.name.charAt(0).toUpperCase(), "#d9e2ff", "#9bb3ff");
 }
 
-type ThemeTokens = {
-  cardBorder: string;
-  cardBackground: string;
-  primaryText: string;
-  secondaryText: string;
-  badgeBorder: string;
-  badgeBackground: string;
-  badgeText: string;
-  buttonBackground: string;
-  buttonHover: string;
-  buttonText: string;
-};
-
 function CouncilMemberCard({ member, tokens }: { member: CouncilMember; tokens: ThemeTokens }) {
-  const initial = useMemo(() => member.name.charAt(0), [member.name]);
-  const hasCta = Boolean(member.ctaLabel && member.ctaUrl);
-  const resolvedAvatar = resolveAvatar(member);
   const openExternal = useOpenExternal();
 
   return (
     <article
-      className={`flex h-full w-full max-w-[312px] flex-col items-center gap-4 rounded-3xl border ${tokens.cardBorder} ${tokens.cardBackground} px-6 pb-6 pt-7 text-center shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-transform duration-200 hover:-translate-y-1`}
+      className={`flex h-full w-full max-w-[360px] flex-col rounded-3xl border ${tokens.cardBorder} ${tokens.cardBackground} overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.12)] transition-transform duration-200 hover:-translate-y-1`}
       aria-label={`${member.name}, ${member.role}`}
     >
-      <div className="flex flex-col items-center gap-3">
-        {resolvedAvatar ? (
-          <Image
-            src={resolvedAvatar}
-            alt={`${member.name} portrait`}
-            width={56}
-            height={56}
-            className="h-14 w-14 rounded-full object-cover"
-            loading="lazy"
-            unoptimized
-          />
-        ) : (
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(228,235,255)] text-base font-semibold text-[rgb(55,95,255)]">
-            {initial}
-          </div>
-        )}
-        <div className="flex flex-col items-center gap-2">
-          <h3 className={`text-base font-semibold ${tokens.primaryText}`}>{member.name}</h3>
-          <span className={`rounded-full border ${tokens.badgeBorder} ${tokens.badgeBackground} px-3 py-1 text-xs font-medium ${tokens.badgeText}`}>
-            {member.role}
-          </span>
-        </div>
+      {/* Image Section */}
+      <div className="relative h-40 w-full flex-shrink-0 overflow-hidden bg-gradient-to-b from-gray-200 to-gray-100">
+        <Image
+          src={member.avatar || resolveAvatar(member)}
+          alt={`${member.name} portrait`}
+          fill
+          className="object-cover object-center"
+          loading="lazy"
+          unoptimized
+        />
       </div>
-      <p className={`text-sm leading-6 ${tokens.secondaryText}`}>{member.opinion}</p>
-      {hasCta && (
-        <div className="mt-2 w-full">
+
+      {/* Content Section */}
+      <div className="flex flex-col gap-4 px-6 py-5">
+        {/* Name + Role */}
+        <div className="flex flex-col gap-2">
+          <h3 className={`text-lg font-semibold ${tokens.primaryText}`}>{member.name}</h3>
+          <div className="flex items-center justify-between gap-3">
+            <span className={`rounded-full border ${tokens.badgeBorder} ${tokens.badgeBackground} px-3 py-1 text-xs font-medium ${tokens.badgeText}`}>
+              {member.role}
+            </span>
+            {member.expertise && (
+              <div className={`flex items-center gap-1.5 rounded-full ${tokens.expertiseBg} px-2.5 py-1`}>
+                <span className="text-xs font-semibold text-blue-600">★</span>
+                <span className={`text-xs font-semibold ${tokens.expertiseText}`}>{member.expertise}%</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Opinion */}
+        <p className={`text-sm leading-relaxed ${tokens.secondaryText}`}>{member.opinion}</p>
+
+        {/* CTA Button */}
+        {member.ctaLabel && member.ctaUrl && (
           <button
             type="button"
             onClick={() => openExternal(member.ctaUrl!)}
-            className={`inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgba(79,119,255,0.6)] ${tokens.buttonBackground} ${tokens.buttonText} ${tokens.buttonHover}`}
+            className={`mt-2 w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgba(79,119,255,0.6)] ${tokens.buttonBackground} ${tokens.buttonText} ${tokens.buttonHover}`}
           >
             {member.ctaLabel}
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </article>
   );
 }
@@ -191,55 +201,61 @@ export default function Home() {
     return <LoadingState />;
   }
 
-  const tokens: ThemeTokens = theme === "dark"
-    ? {
-        cardBorder: "border-[rgba(255,255,255,0.08)]",
-        cardBackground: "bg-[rgba(26,30,42,0.92)]",
-        primaryText: "text-white",
-        secondaryText: "text-[rgba(235,235,245,0.7)]",
-        badgeBorder: "border-[rgba(255,255,255,0.18)]",
-        badgeBackground: "bg-[rgba(255,255,255,0.08)]",
-        badgeText: "text-[rgba(235,235,245,0.85)]",
-        buttonBackground: "bg-white/90",
-        buttonHover: "hover:bg-white",
-        buttonText: "text-[rgb(25,74,216)]",
-      }
-    : {
-        cardBorder: "border-[rgb(229,232,235)]",
-        cardBackground: "bg-white",
-        primaryText: "text-[rgb(22,30,45)]",
-        secondaryText: "text-[rgb(71,82,105)]",
-        badgeBorder: "border-[rgb(209,214,224)]",
-        badgeBackground: "bg-[rgb(244,246,250)]",
-        badgeText: "text-[rgb(80,90,110)]",
-        buttonBackground: "bg-[rgb(35,99,255)]",
-        buttonHover: "hover:bg-[rgb(27,85,226)]",
-        buttonText: "text-white",
-      };
+  const tokens: ThemeTokens =
+    theme === "dark"
+      ? {
+          cardBorder: "border-[rgba(255,255,255,0.08)]",
+          cardBackground: "bg-[rgba(26,32,44,0.6)]",
+          primaryText: "text-white",
+          secondaryText: "text-[rgba(235,235,245,0.75)]",
+          tertiaryText: "text-[rgba(235,235,245,0.6)]",
+          badgeBorder: "border-[rgba(255,255,255,0.15)]",
+          badgeBackground: "bg-[rgba(255,255,255,0.08)]",
+          badgeText: "text-[rgba(235,235,245,0.9)]",
+          buttonBackground: "bg-white/95",
+          buttonHover: "hover:bg-white",
+          buttonText: "text-[rgb(25,74,216)]",
+          expertiseBg: "bg-[rgba(147,197,253,0.15)]",
+          expertiseText: "text-[rgb(147,197,253)]",
+        }
+      : {
+          cardBorder: "border-[rgb(229,232,235)]",
+          cardBackground: "bg-white",
+          primaryText: "text-[rgb(22,30,45)]",
+          secondaryText: "text-[rgb(75,85,99)]",
+          tertiaryText: "text-[rgb(107,114,128)]",
+          badgeBorder: "border-[rgb(209,214,224)]",
+          badgeBackground: "bg-[rgb(244,246,250)]",
+          badgeText: "text-[rgb(80,90,110)]",
+          buttonBackground: "bg-[rgb(35,99,255)]",
+          buttonHover: "hover:bg-[rgb(27,85,226)]",
+          buttonText: "text-white",
+          expertiseBg: "bg-[rgb(219,234,254)]",
+          expertiseText: "text-[rgb(37,99,235)]",
+        };
 
   const isCompact = maxHeight < 600;
+
   return (
-    <div className={`flex w-full justify-center px-4 ${isCompact ? "py-4" : "py-6"}`}>
+    <div className={`flex w-full justify-center px-4 ${isCompact ? "py-3" : "py-5"}`}>
       <div className="flex w-full max-w-[1120px] flex-col items-center gap-6 text-center">
-        <header className={`flex flex-col items-center gap-2 ${tokens.primaryText}`}>
-          <p className="text-xs font-medium uppercase tracking-[0.12em] opacity-80">
-            AI COUNCIL INSIGHTS
-          </p>
-          <h1 className="text-2xl font-semibold">
-            Three advisors weigh in on “{data.question}”
-          </h1>
+        {/* Header */}
+        <header className={`flex flex-col items-center gap-3 ${tokens.primaryText}`}>
+          <p className="text-xs font-medium uppercase tracking-[0.15em] opacity-70">AI COUNCIL INSIGHTS</p>
+          <h1 className="text-2xl font-bold">Three advisors weigh in on &quot;{data.question}&quot;</h1>
           <p className={`text-sm ${tokens.secondaryText}`}>Compare perspectives at a glance before you follow up in chat.</p>
         </header>
 
-        <section aria-label="Council member perspectives" className="relative">
+        {/* Carousel Section with Hidden Scrollbars */}
+        <section aria-label="Council member perspectives" className="relative w-full">
           <ul
-            className="flex w-full flex-col gap-4 pb-2 md:flex-row md:justify-center md:overflow-x-auto md:snap-x md:snap-mandatory"
+            className="flex w-full flex-col gap-5 pb-2 md:flex-row md:justify-center md:overflow-x-auto md:snap-x md:snap-mandatory md:[scrollbar-width:none] md:[-webkit-overflow-scrolling:touch] md:[-ms-overflow-style:none] md:[&::-webkit-scrollbar]:hidden"
             role="list"
           >
             {data.members?.map((member, index) => (
               <li
                 key={`${member.name}-${index}`}
-                className="flex w-full justify-center md:min-w-[280px] md:max-w-[340px] md:flex-1 md:snap-center"
+                className="flex w-full justify-center md:min-w-[360px] md:flex-none md:snap-center"
               >
                 <CouncilMemberCard member={member} tokens={tokens} />
               </li>
