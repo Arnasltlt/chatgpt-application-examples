@@ -2,7 +2,7 @@
 
 > A living playbook for building and shipping ChatGPT Apps with the OpenAI Apps SDK and Model Context Protocol (MCP).
 
-**Last Updated:** October 10, 2025
+**Last Updated:** October 15, 2025
 
 ---
 
@@ -205,36 +205,31 @@ return types.ServerResult(
 )
 ```
 
-### Embedding Widgets with Dynamic Data
+### Minimal, Reliable Widget Handoff (What finally worked)
 
-**Do NOT** use static HTML with hard-coded widget data. Instead, embed data dynamically:
+- **Return trio of fields** on `tools/call`: `content` (optional), `structuredContent` (your UI data), and `_meta`.
+- **Point `_meta["openai/outputTemplate"]`** to your registered HTML resource (`app://...` or `ui://...`).
+- **Serve a single HTML file** from your server (no external JS/CSS requests); inside, read `window.openai.toolOutput` to hydrate the UI.
+- Keep the server free of inline HTML building; just read and return the compiled/static HTML template.
 
+Example shape (Python):
 ```python
-def _embedded_widget_resource(widget, widget_props: Dict[str, Any]):
-    """Create embedded widget resource with dynamic props."""
-    html_with_props = _render_widget_html(widget, widget_props)
-    
-    return types.EmbeddedResource(
-        type="resource",
-        resource=types.TextResourceContents(
-            uri=widget.template_uri,
-            mimeType="text/html+skybridge",
-            text=html_with_props,
-            title=widget.title,
-        ),
-    )
-```
-
-Attach it to the tool result metadata:
-
-```python
-widget_resource = _embedded_widget_resource(WIDGET, widget_props)
-
-meta = {
-    "openai.com/widget": widget_resource.model_dump(mode="json"),
-    # ... other metadata
+return {
+  "jsonrpc": "2.0",
+  "id": req_id,
+  "result": {
+    "content": [{"type": "text", "text": "Your AI Council considered the question."}],
+    "structuredContent": {"question": question, "members": members},
+    "_meta": {
+      "openai/outputTemplate": "app://your-ai-council.html",
+      "openai/widgetAccessible": True,
+      "openai/resultCanProduceWidget": True,
+    }
+  }
 }
 ```
+
+This aligns with the official guide to “Set up your server” and “Structure the data your tool returns” from the Apps SDK docs ([Build MCP server](https://developers.openai.com/apps-sdk/build/mcp-server)).
 
 ### CORS Configuration
 
@@ -375,26 +370,15 @@ ChatGPT renders widgets in a sandboxed iframe (`https://web-sandbox.oaiuserconte
 2. **404 errors** if ngrok's free tier shows a browser warning page
 3. **Changing URLs** if you restart ngrok without a persistent subdomain
 
-### Solution 1: Inline Assets (Recommended)
+### Solution 1: Single self-contained HTML (Recommended)
 
-**Embed CSS and JS directly into the HTML** returned by your MCP server:
+**Ship a self-contained HTML template** that does not depend on separate JS/CSS files. The ChatGPT client loads one HTML response and injects `window.openai.toolOutput` automatically. This avoids CORS and ngrok interstitials.
 
 ```python
-def _render_widget_html(widget, widget_props: Dict[str, Any]) -> str:
-    from pathlib import Path
-    
-    assets_dir = Path(__file__).parent.parent / "assets"
-    css_path = assets_dir / f"{widget.identifier}-2d2b.css"
-    js_path = assets_dir / f"{widget.identifier}-2d2b.js"
-    
-    css = css_path.read_text(encoding="utf-8") if css_path.exists() else ""
-    js = js_path.read_text(encoding="utf-8") if js_path.exists() else ""
-    
-    return f"""
-<div id="{widget.identifier}-root"></div>
-<style>{css}</style>
-<script type="module">{js}</script>
-"""
+TEMPLATE_PATH = Path(__file__).parent.parent / "assets" / "your-ai-council.html"
+
+def _load_widget_html() -> str:
+    return TEMPLATE_PATH.read_text(encoding="utf-8")
 ```
 
 **Pros:**
@@ -406,7 +390,7 @@ def _render_widget_html(widget, widget_props: Dict[str, Any]) -> str:
 - Larger HTML payload (usually fine for small widgets)
 - No browser caching of assets across invocations
 
-### Solution 2: Same-Origin Assets
+### Solution 2: Same-Origin Assets (Alternative)
 
 Serve assets from the **same server** as your MCP endpoint:
 
@@ -434,7 +418,7 @@ html = f"""
 - Still requires stable ngrok URL (or paid ngrok plan)
 - ngrok free tier browser warning can block asset loading
 
-### Solution 3: CDN (Production Only)
+### Solution 3: CDN (Production)
 
 For production, host assets on a CDN (e.g., Cloudflare, Vercel):
 
@@ -475,7 +459,7 @@ html = f"""
    ngrok config add-authtoken YOUR_AUTHTOKEN
    ```
 
-3. **Start tunnel:**
+3. **Start tunnel (dev):**
    ```bash
    ngrok http 8001 --log stdout
    ```
@@ -669,15 +653,15 @@ allow_origins=["https://chatgpt.com", "https://web-sandbox.oaiusercontent.com"]
 
 Test your tool with simple prompts:
 
-**Example (Battle Cards):**
+**Example (Your AI Council):**
 ```
-Compare Arnoldas vs Dovydas
+Ask the council: "Should we prioritize latency or quality for real-time inference?"
 ```
 
 **Expected behavior:**
 1. ChatGPT calls `compare-fighters` tool
 2. Server returns structured data + widget HTML
-3. Widget renders with cards, stats, and winner highlight
+3. Widget renders with three member cards and updates with the tool output
 4. Text response matches the UI
 
 ### 3. Verify Widget Rendering
