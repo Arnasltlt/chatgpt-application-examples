@@ -74,6 +74,10 @@ type ThemeTokens = {
   buttonText: string;
   expertiseBg: string;
   expertiseText: string;
+  ctaBorder: string;
+  ctaBackground: string;
+  ctaText: string;
+  ctaHover: string;
 };
 
 function LoadingState() {
@@ -102,11 +106,10 @@ function CouncilMemberCard({ member, tokens }: { member: CouncilMember; tokens: 
 
   return (
     <article
-      className={`flex h-full w-full max-w-[360px] flex-col rounded-3xl border ${tokens.cardBorder} ${tokens.cardBackground} overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.12)] transition-transform duration-200 hover:-translate-y-1`}
+      className={`flex h-full w-full max-w-[320px] flex-col overflow-hidden rounded-[28px] border ${tokens.cardBorder} ${tokens.cardBackground} shadow-[0_6px_18px_rgba(15,23,42,0.14)] transition-transform duration-200 hover:-translate-y-1`}
       aria-label={`${member.name}, ${member.role}`}
     >
-      {/* Image Section */}
-      <div className="relative h-40 w-full flex-shrink-0 overflow-hidden bg-gradient-to-b from-gray-200 to-gray-100">
+      <div className="relative h-32 w-full flex-shrink-0">
         <Image
           src={member.avatar || resolveAvatar(member)}
           alt={`${member.name} portrait`}
@@ -117,33 +120,29 @@ function CouncilMemberCard({ member, tokens }: { member: CouncilMember; tokens: 
         />
       </div>
 
-      {/* Content Section */}
-      <div className="flex flex-col gap-4 px-6 py-5">
-        {/* Name + Role */}
+      <div className="flex flex-1 flex-col gap-4 px-5 py-4 text-left">
         <div className="flex flex-col gap-2">
-          <h3 className={`text-lg font-semibold ${tokens.primaryText}`}>{member.name}</h3>
+          <h3 className={`text-base font-semibold leading-5 ${tokens.primaryText}`}>{member.name}</h3>
           <div className="flex items-center justify-between gap-3">
-            <span className={`rounded-full border ${tokens.badgeBorder} ${tokens.badgeBackground} px-3 py-1 text-xs font-medium ${tokens.badgeText}`}>
+            <span className={`inline-flex items-center rounded-full border ${tokens.badgeBorder} ${tokens.badgeBackground} px-3 py-1 text-xs font-medium ${tokens.badgeText}`}>
               {member.role}
             </span>
             {member.expertise && (
-              <div className={`flex items-center gap-1.5 rounded-full ${tokens.expertiseBg} px-2.5 py-1`}>
-                <span className="text-xs font-semibold text-blue-600">★</span>
-                <span className={`text-xs font-semibold ${tokens.expertiseText}`}>{member.expertise}%</span>
-              </div>
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${tokens.expertiseBg} ${tokens.expertiseText}`}>
+                <span aria-hidden>★</span>
+                <span>{member.expertise}%</span>
+              </span>
             )}
           </div>
         </div>
 
-        {/* Opinion */}
         <p className={`text-sm leading-relaxed ${tokens.secondaryText}`}>{member.opinion}</p>
 
-        {/* CTA Button */}
         {member.ctaLabel && member.ctaUrl && (
           <button
             type="button"
             onClick={() => openExternal(member.ctaUrl!)}
-            className={`mt-2 w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgba(79,119,255,0.6)] ${tokens.buttonBackground} ${tokens.buttonText} ${tokens.buttonHover}`}
+            className={`mt-1 inline-flex w-full items-center justify-center rounded-xl border ${tokens.ctaBorder} ${tokens.ctaBackground} px-4 py-2.5 text-sm font-semibold transition-colors duration-150 ${tokens.ctaText} ${tokens.ctaHover}`}
           >
             {member.ctaLabel}
           </button>
@@ -205,57 +204,67 @@ export default function Home() {
     theme === "dark"
       ? {
           cardBorder: "border-[rgba(255,255,255,0.08)]",
-          cardBackground: "bg-[rgba(26,32,44,0.6)]",
+          cardBackground: "bg-[rgba(30,34,48,0.88)]",
           primaryText: "text-white",
-          secondaryText: "text-[rgba(235,235,245,0.75)]",
+          secondaryText: "text-[rgba(235,235,245,0.78)]",
           tertiaryText: "text-[rgba(235,235,245,0.6)]",
           badgeBorder: "border-[rgba(255,255,255,0.15)]",
           badgeBackground: "bg-[rgba(255,255,255,0.08)]",
-          badgeText: "text-[rgba(235,235,245,0.9)]",
+          badgeText: "text-[rgba(235,235,245,0.85)]",
           buttonBackground: "bg-white/95",
           buttonHover: "hover:bg-white",
           buttonText: "text-[rgb(25,74,216)]",
-          expertiseBg: "bg-[rgba(147,197,253,0.15)]",
-          expertiseText: "text-[rgb(147,197,253)]",
+          expertiseBg: "bg-[rgba(79,126,255,0.12)]",
+          expertiseText: "text-[rgba(168,198,255,0.95)]",
+          ctaBorder: "border-[rgba(255,255,255,0.18)]",
+          ctaBackground: "bg-[rgba(255,255,255,0.04)]",
+          ctaText: "text-white",
+          ctaHover: "hover:bg-[rgba(255,255,255,0.12)]",
         }
       : {
-          cardBorder: "border-[rgb(229,232,235)]",
+          cardBorder: "border-[rgba(219,223,231,0.8)]",
           cardBackground: "bg-white",
           primaryText: "text-[rgb(22,30,45)]",
-          secondaryText: "text-[rgb(75,85,99)]",
+          secondaryText: "text-[rgb(79,88,104)]",
           tertiaryText: "text-[rgb(107,114,128)]",
-          badgeBorder: "border-[rgb(209,214,224)]",
-          badgeBackground: "bg-[rgb(244,246,250)]",
-          badgeText: "text-[rgb(80,90,110)]",
+          badgeBorder: "border-[rgba(210,217,228,0.9)]",
+          badgeBackground: "bg-[rgba(241,244,250,0.9)]",
+          badgeText: "text-[rgb(78,86,104)]",
           buttonBackground: "bg-[rgb(35,99,255)]",
           buttonHover: "hover:bg-[rgb(27,85,226)]",
           buttonText: "text-white",
-          expertiseBg: "bg-[rgb(219,234,254)]",
-          expertiseText: "text-[rgb(37,99,235)]",
+          expertiseBg: "bg-[rgba(35,99,255,0.12)]",
+          expertiseText: "text-[rgb(35,99,255)]",
+          ctaBorder: "border-[rgba(210,217,228,0.9)]",
+          ctaBackground: "bg-white",
+          ctaText: "text-[rgb(25,74,216)]",
+          ctaHover: "hover:bg-[rgba(231,237,254,0.6)]",
         };
 
-  const isCompact = maxHeight < 600;
+  const isCompact = maxHeight < 540;
 
   return (
-    <div className={`flex w-full justify-center px-4 ${isCompact ? "py-3" : "py-5"}`}>
-      <div className="flex w-full max-w-[1120px] flex-col items-center gap-6 text-center">
-        {/* Header */}
-        <header className={`flex flex-col items-center gap-3 ${tokens.primaryText}`}>
-          <p className="text-xs font-medium uppercase tracking-[0.15em] opacity-70">AI COUNCIL INSIGHTS</p>
-          <h1 className="text-2xl font-bold">Three advisors weigh in on &quot;{data.question}&quot;</h1>
+    <div className={`flex w-full justify-center px-3 ${isCompact ? "py-2.5" : "py-4"}`}>
+      <div className="flex w-full max-w-[1080px] flex-col items-center gap-5">
+        <header className={`flex w-full flex-col items-start gap-1 text-left ${tokens.primaryText}`}>
+          <p className="text-[11px] font-medium uppercase tracking-[0.14em] opacity-70">AI COUNCIL INSIGHTS</p>
+          <h1 className="text-xl font-semibold leading-tight sm:text-[22px]">
+            Three advisors weigh in on <span className="text-[rgb(35,99,255)]">{data.question}</span>
+          </h1>
           <p className={`text-sm ${tokens.secondaryText}`}>Compare perspectives at a glance before you follow up in chat.</p>
         </header>
 
-        {/* Carousel Section with Hidden Scrollbars */}
         <section aria-label="Council member perspectives" className="relative w-full">
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[rgba(0,0,0,0.08)] to-transparent md:pointer-events-none md:from-transparent" aria-hidden />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-[rgba(0,0,0,0.08)] to-transparent md:pointer-events-none md:from-transparent" aria-hidden />
           <ul
-            className="flex w-full flex-col gap-5 pb-2 md:flex-row md:justify-center md:overflow-x-auto md:snap-x md:snap-mandatory md:[scrollbar-width:none] md:[-webkit-overflow-scrolling:touch] md:[-ms-overflow-style:none] md:[&::-webkit-scrollbar]:hidden"
+            className="flex w-full snap-x snap-mandatory gap-4 overflow-x-auto pb-2 pt-1 [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             role="list"
           >
             {data.members?.map((member, index) => (
               <li
                 key={`${member.name}-${index}`}
-                className="flex w-full justify-center md:min-w-[360px] md:flex-none md:snap-center"
+                className="flex w-full shrink-0 snap-center justify-center md:w-auto md:shrink"
               >
                 <CouncilMemberCard member={member} tokens={tokens} />
               </li>
