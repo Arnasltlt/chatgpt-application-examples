@@ -78,7 +78,15 @@ Please feel free to open an issue or submit a pull request.
 
 ## Applications
 
-*Applications will be added to this section as they are developed.*
+### Your AI Council
+A sophisticated consultation app featuring three AI council members offering diverse perspectives on user questions.
+
+- **Features**: Multi-perspective analysis, beautiful card-based UI, real-time responses
+- **Tech Stack**: React + TypeScript frontend, Python FastAPI + MCP backend
+- **Use Cases**: Decision-making support, strategic planning, technical analysis
+- **Status**: ✅ Complete and ready for ChatGPT integration
+
+[📖 Read the full documentation](./your-ai-council/README.md)
 
 ## Resources
 
