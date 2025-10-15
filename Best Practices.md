@@ -912,4 +912,11 @@ ngrok start mcp
 - Injecting the template's `<NextChatSDKBootstrap baseUrl={baseURL} />` into `app/layout.tsx` keeps history, fetch, and DOM mutations compatible with ChatGPT's sandboxed iframe.
 - After migrating to Next.js, remember to run `npx eslint .` and `npm run build` to catch TypeScript and lint errors introduced by the new structure.
 
+## Next.js Integration Notes
+
+- **Use the base URL helper.** Keep `baseUrl.ts` (as in the Vercel template) and set `assetPrefix` in `next.config.ts` so ChatGPT iframes pull `/_next/` assets from the correct origin.
+- **Bootstrap the iframe environment.** Always render `<NextChatSDKBootstrap baseUrl={baseURL} />` in `app/layout.tsx` to patch history, fetch, and DOM mutations before hydration.
+- **Match the MCP expectations.** When smoke-testing the deployed `/mcp` route, pass both `Accept: application/json` and `Accept: text/event-stream` headers plus the required JSON-RPC `initialize` fields (`capabilities`, `clientInfo`)—otherwise the handler correctly rejects the request.
+- **Run lint + build after porting.** For TypeScript/ESLint issues surfaced by Next.js, run `npx eslint .` and `npm run build` before pushing or deploying.
+
 
