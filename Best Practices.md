@@ -908,4 +908,8 @@ ngrok start mcp
 
 **Contributions welcome!** Update this document as you learn new patterns or encounter new issues.
 
+- **Setting `assetPrefix` in `next.config.ts` to the app's externally reachable base URL prevents 404s when the iframe fetches `/_next/` assets.
+- Injecting the template's `<NextChatSDKBootstrap baseUrl={baseURL} />` into `app/layout.tsx` keeps history, fetch, and DOM mutations compatible with ChatGPT's sandboxed iframe.
+- After migrating to Next.js, remember to run `npx eslint .` and `npm run build` to catch TypeScript and lint errors introduced by the new structure.
+
 
