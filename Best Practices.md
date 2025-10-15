@@ -159,6 +159,14 @@ class BattleInput(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 ```
 
+#### 3. UI Handoff Metadata
+
+When you register a React UI layer with your MCP server, give the agent a single, copy-pastable instruction block so it always returns the right widget metadata:
+
+> After producing your normal text output, include an additional metadata block that tells ChatGPT which UI component to render. Return a tool result shaped like `{ type: "tool_result", content: [{ type: "text", text: "your message" }], _meta: { "openai.ui": "my-interface" } }`. Make sure that `"my-interface"` exactly matches the resource you registered in your MCP server with `server.resource("my-interface", { uri: "ui://my-interface", mimeType: "text/html+skybridge", content: () => fs.readFileSync("./dist/my-interface.html","utf8") })`. The HTML bundle (built from your React code) must be served over HTTPS, have no inline scripts, and be fully self-contained so ChatGPT can sandbox and render it safely. Once this is in place, the agent’s job is simply to return structured JSON plus the `_meta.openai.ui` pointer—ChatGPT handles the rest of the rendering automatically.
+
+Drop this note alongside your server setup docs so teammates remember to pass the guidance to the agent implementation.
+
 Use it in your tool handler:
 
 ```python
@@ -175,7 +183,7 @@ async def _call_tool_request(req: types.CallToolRequest):
     # ... handle valid input
 ```
 
-#### 3. Structured Content
+#### 4. Structured Content
 
 Return both text and structured data for the UI:
 
