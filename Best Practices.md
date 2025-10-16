@@ -1098,3 +1098,19 @@ _meta: {
 These patches mirror the Vercel guide and have proven to eliminate the majority of iframe‑integration issues while preserving a native feel inside ChatGPT. [Source](https://vercel.com/blog/running-next-js-inside-chatgpt-a-deep-dive-into-native-app-integration)
 
 
+---
+
+## Schema Evolution & Type Safety
+
+When your UI and server exchange structured data, small schema changes ripple through the entire stack. Keep these principles in mind:
+
+- **Name things carefully up front.** Pick field names that describe the payload’s intent so you avoid churn later.
+- **Change fields atomically.** When a key must change, update types, validators, mock data, LLM response schemas, and UI references in the same commit.
+- **Lean on type systems.** Run `npm run build` (or an equivalent type check) after every schema edit to surface mismatches immediately.
+- **Validate at the edges.** Keep Zod/Pydantic (or similar) schemas in sync with your TypeScript types so malformed responses fail fast and loudly.
+- **Document the change surface.** Note migrations in README/CHANGELOG and communicate downstream expectations to prompt authors.
+- **Test the full round trip.** Hit your live endpoint (or mock) with the new schema to confirm the LLM/tool still produces the exact shape the widget expects.
+
+These habits help prevent “data exists but UI is blank” regressions and keep cross-team contracts trustworthy.
+
+
