@@ -63,7 +63,7 @@ const handler = createMcpHandler(async (server) => {
       } as const;
 
       const result = await getCouncilResult(question);
-      const content = [
+      const content: Array<{ type: "text"; text: string }> = [
         {
           type: "text",
           text: `Council opinion on: ${result.response.question}`,
