@@ -13,7 +13,7 @@ const MOCK_RESPONSE: CouncilResponse = {
     {
       name: "Dr. Sarah Chen",
       role: "Strategic Advisor",
-      opinion:
+      advice:
         "This is a great opportunity! Consider the long-term implications and stakeholder impact carefully. Timing is crucial—Q1 gives us runway to navigate regulatory compliance. Budget 8–12 weeks for market research and localization.",
       emoji: "🧠",
       expertise: 92,
@@ -23,7 +23,7 @@ const MOCK_RESPONSE: CouncilResponse = {
     {
       name: "Marcus Rodriguez",
       role: "Technical Expert",
-      opinion:
+      advice:
         "From a technical standpoint, this is feasible. Focus on implementation challenges and scalability. Our infrastructure can handle 3x traffic by May. Prioritize GDPR compliance and ensure all data residency requirements are met.",
       emoji: "🛠️",
       expertise: 88,
@@ -33,7 +33,7 @@ const MOCK_RESPONSE: CouncilResponse = {
     {
       name: "Alex Thompson",
       role: "UX Specialist",
-      opinion:
+      advice:
         "Users will love this approach if we prioritize solving real problems and delivering visible value. Conduct user testing in beta markets first. A phased rollout with strong localization will give us competitive advantage and reduce churn.",
       emoji: "🎨",
       expertise: 85,
@@ -110,7 +110,7 @@ function CouncilMemberCard({ member, tokens }: { member: CouncilMember; tokens: 
           </div>
         </div>
 
-        <p className={`text-sm leading-relaxed ${tokens.secondaryText}`}>{member.opinion}</p>
+        <p className={`text-sm leading-relaxed ${tokens.secondaryText}`}>{member.advice}</p>
 
         {member.ctaLabel && member.ctaUrl && (
           <button

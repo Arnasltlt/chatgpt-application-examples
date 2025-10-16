@@ -4,7 +4,7 @@ import { z } from "zod";
 export type CouncilMember = {
   name: string;
   role: string;
-  opinion: string;
+  advice: string;
   emoji: string;
   expertise?: number;
   ctaLabel?: string;
@@ -26,7 +26,7 @@ const memberSchema = z
   .object({
     name: z.string().min(1),
     role: z.string().min(1),
-    opinion: z.string().min(1),
+    advice: z.string().min(1),
     emoji: z.string().min(1),
     expertise: z.number().min(0).max(100).optional(),
     ctaLabel: z.string().optional(),
@@ -46,21 +46,21 @@ const FALLBACK_MEMBERS: CouncilMember[] = [
   {
     name: "Dr. Sarah Chen",
     role: "Strategic Advisor",
-    opinion:
+    advice:
       "This is a great opportunity! Consider the long-term implications and stakeholder impact carefully.",
     emoji: "🧠",
   },
   {
     name: "Marcus Rodriguez",
     role: "Technical Expert",
-    opinion:
+    advice:
       "From a technical standpoint, this is feasible. Focus on implementation challenges and scalability.",
     emoji: "🛠️",
   },
   {
     name: "Alex Thompson",
     role: "User Experience Specialist",
-    opinion:
+    advice:
       "Users will love this approach! Make sure it solves real problems and provides clear value.",
     emoji: "🎨",
   },
@@ -136,14 +136,14 @@ export async function getCouncilResult(question: string): Promise<CouncilResult>
           {
             role: "system",
             content:
-              "You convene an expert council of three personas. Provide concise, actionable opinions tailored to the user's question. Each persona must include an emoji that reflects their role or energy. Respond ONLY with JSON matching the schema you are given.",
+              "You convene an expert council of three personas. Provide concise, actionable advice tailored to the user's question. Each persona must include an emoji that reflects their role or energy. Respond ONLY with JSON matching the schema you are given.",
           },
           {
             role: "user",
             content: JSON.stringify({
               question,
               instructions:
-                "Return exactly three distinct members with unique names and roles who give complementary advice. Pick an emoji for each member that fits their persona (no text, just a single emoji character). Keep opinions under 90 words.",
+                "Return exactly three distinct members with unique names and roles who give complementary advice. Pick an emoji for each member that fits their persona (no text, just a single emoji character). Keep advice under 90 words.",
             }),
           },
         ],
@@ -165,11 +165,14 @@ export async function getCouncilResult(question: string): Promise<CouncilResult>
                   maxItems: 3,
                   items: {
                     type: "object",
-                    required: ["name", "role", "opinion", "emoji"],
+                    required: ["name", "role", "advice", "emoji"],
                     properties: {
                       name: { type: "string" },
                       role: { type: "string" },
-                      opinion: { type: "string" },
+                      advice: {
+                        type: "string",
+                        description: "Concise, actionable advice from this council member."
+                      },
                       emoji: {
                         type: "string",
                         minLength: 1,
@@ -339,7 +342,7 @@ function isCouncilMemberShape(candidate: unknown): candidate is CouncilMember {
     typeof candidate === "object" &&
     typeof (candidate as { name?: unknown }).name === "string" &&
     typeof (candidate as { role?: unknown }).role === "string" &&
-    typeof (candidate as { opinion?: unknown }).opinion === "string" &&
+    typeof (candidate as { advice?: unknown }).advice === "string" &&
     typeof (candidate as { emoji?: unknown }).emoji === "string"
   );
 }
