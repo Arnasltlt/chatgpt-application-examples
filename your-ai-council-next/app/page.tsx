@@ -1,7 +1,7 @@
 "use client";
 
 import type { CouncilMember, CouncilResponse, CouncilResult } from "@/server/council";
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { useOpenAIGlobal, useOpenExternal, useWidgetProps } from "./hooks";
 
@@ -135,7 +135,7 @@ type ToolOutputShape = {
   };
 };
 
-export default function Home() {
+function HomeContent() {
   const toolOutput = useWidgetProps<ToolOutputShape>({});
   const theme = useOpenAIGlobal("theme") ?? "light";
   const maxHeight = useOpenAIGlobal("maxHeight") ?? 640;
@@ -390,5 +390,13 @@ export default function Home() {
         </section>
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <HomeContent />
+    </Suspense>
   );
 }
