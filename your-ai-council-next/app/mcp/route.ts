@@ -1,17 +1,7 @@
 import { baseURL } from "@/baseUrl";
+import { getCouncilResult } from "@/server/council";
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
-
-type CouncilMember = {
-  name: string;
-  role: string;
-  opinion: string;
-};
-
-type CouncilResponse = {
-  question: string;
-  members: CouncilMember[];
-};
 
 const handler = createMcpHandler(async (server) => {
   const templateUri = "ui://your-ai-council.html";
@@ -64,45 +54,33 @@ const handler = createMcpHandler(async (server) => {
       },
     },
     async ({ question }) => {
-      const structuredContent: CouncilResponse = {
-        question,
-        members: [
-          {
-            name: "Dr. Sarah Chen",
-            role: "Strategic Advisor",
-            opinion:
-              "This is a great opportunity! Consider the long-term implications and stakeholder impact carefully.",
-          },
-          {
-            name: "Marcus Rodriguez",
-            role: "Technical Expert",
-            opinion:
-              "From a technical standpoint, this is feasible. Focus on implementation challenges and scalability.",
-          },
-          {
-            name: "Alex Thompson",
-            role: "User Experience Specialist",
-            opinion:
-              "Users will love this approach! Make sure it solves real problems and provides clear value.",
-          },
-        ],
-      };
+      const baseMeta = {
+        "openai/outputTemplate": templateUri,
+        "openai/toolInvocation/invoking": "Consulting the AI Council",
+        "openai/toolInvocation/invoked": "Council wisdom received",
+        "openai/widgetAccessible": true,
+        "openai/resultCanProduceWidget": true,
+      } as const;
+
+      const result = await getCouncilResult(question);
+      const content: Array<{ type: "text"; text: string }> = [
+        {
+          type: "text",
+          text: `Council opinion on: ${result.response.question}`,
+        },
+      ];
+
+      if (result.source === "fallback" && result.reason) {
+        content.push({
+          type: "text",
+          text: result.reason,
+        });
+      }
 
       return {
-        content: [
-          {
-            type: "text",
-            text: `Council opinion on: ${question}`,
-          },
-        ],
-        structuredContent,
-        _meta: {
-          "openai/outputTemplate": templateUri,
-          "openai/toolInvocation/invoking": "Consulting the AI Council",
-          "openai/toolInvocation/invoked": "Council wisdom received",
-          "openai/widgetAccessible": true,
-          "openai/resultCanProduceWidget": true,
-        },
+        content,
+        structuredContent: result.response,
+        _meta: baseMeta,
       };
     }
   );

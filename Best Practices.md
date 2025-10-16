@@ -919,4 +919,182 @@ ngrok start mcp
 - **Match the MCP expectations.** When smoke-testing the deployed `/mcp` route, pass both `Accept: application/json` and `Accept: text/event-stream` headers plus the required JSON-RPC `initialize` fields (`capabilities`, `clientInfo`)—otherwise the handler correctly rejects the request.
 - **Run lint + build after porting.** For TypeScript/ESLint issues surfaced by Next.js, run `npx eslint .` and `npm run build` before pushing or deploying.
 
+---
+
+## Inline Cards in ChatGPT — Design Learnings (AI Council)
+
+What we changed and why, to achieve a Booking.com‑like, native inline feel.
+
+### Do this
+- Prefer the inline carousel pattern: horizontal, snap-scrolling cards with hidden rails.
+- Always hide native scrollbars in the widget container:
+  - `scrollbar-width: none;`, `&::-webkit-scrollbar { display: none; }`, and keep `-webkit-overflow-scrolling: touch`.
+- Use a grid/flow layout that forces horizontal on narrow host columns:
+  - `flex overflow-x-auto snap-x snap-mandatory gap-4` with each card `shrink-0 snap-center`.
+- Make cards content‑rich but scannable: image → title → badge → metadata → CTA.
+- Left-align long text; keep headers/badges compact; ensure readable line length.
+- Theme tokens for light/dark with subtle borders + soft shadows; avoid harsh black.
+- Use dev‑only mock data/images to iterate quickly; gate by `NODE_ENV === "development"`.
+- Keep CTAs single and clear; default to full-width buttons.
+
+### Avoid this
+- Centered paragraphs for body copy (hurts scan speed).
+- Tall hero images inside tight host columns (dominates card).
+- Nested scroll areas (host already scrolls); avoid double scrollbars.
+- Duplicating ChatGPT text above the widget; keep headers concise.
+
+### Critical integration flags
+- Remove ChatGPT’s outer card frame by setting MCP resource meta:
+  - `"openai/widgetPrefersBorder": false` (we previously had `true`, which caused the extra chrome).
+- Keep `_meta["openai/outputTemplate"]` pointing at a single, self‑contained HTML (or Next app) to simplify rendering.
+
+### Spacing & sizing that worked
+- Card max width ~320px; image height ~128px; internal padding `px-5 py-4`.
+- Carousel gap `gap-4`; container padding `px-3 py-4` (smaller in compact height).
+
+### Testing checklist (design)
+- Render in both ChatGPT and local browser; verify: no visible scrollbars, smooth snap, readable contrast, and correct dark mode.
+- Resize host column (narrow) → cards remain horizontal, snap works.
+- Keyboard focus ring visible on CTA; tab order logical.
+
+### Snippet: hidden-rails carousel
+```tsx
+<ul className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+  {items.map((it) => (
+    <li key={it.id} className="shrink-0 snap-center">
+      <Card item={it} />
+    </li>
+  ))}
+</ul>
+```
+
+### Snippet: MCP meta to remove frame
+```ts
+_meta: {
+  "openai/widgetDescription": "Your widget",
+  "openai/widgetPrefersBorder": false,
+}
+```
+
+These patterns reduced design iterations and produced a native look quickly, aligned with the Apps SDK design guidelines.
+
+---
+
+## Next.js inside ChatGPT — Required patches (from Vercel deep dive)
+
+Reference: [Running Next.js inside ChatGPT: A deep dive into native app integration](https://vercel.com/blog/running-next-js-inside-chatgpt-a-deep-dive-into-native-app-integration)
+
+ChatGPT renders apps in a triple‑iframe sandbox which breaks several Next.js assumptions. Apply the following patches so your app feels native and remains secure.
+
+### 1) Force Next static assets to your real origin
+Set `assetPrefix` so `/_next/*` resolves against your domain (not the sandbox):
+```ts
+// next.config.ts
+import type { NextConfig } from "next";
+import { baseURL } from "./baseUrl";
+
+const nextConfig: NextConfig = {
+  assetPrefix: baseURL,
+};
+export default nextConfig;
+```
+
+### 2) Rewrite all relative URLs with <base>
+Without this, images/fonts/API calls use the sandbox origin. Inject a `<base>` tag early:
+```tsx
+// app/layout.tsx
+function NextChatSDKBootstrap({ baseUrl }: { baseUrl: string }) {
+  return (
+    <>
+      <base href={baseUrl} />
+      {/* other bootstrap/patches here */}
+    </>
+  );
+}
+```
+
+### 3) Safe client navigation & history
+Prevent leaking your full origin and keep navigation relative inside the sandbox:
+```tsx
+// app/layout.tsx (inside a client bootstrap component)
+useEffect(() => {
+  const patch = (m: "pushState" | "replaceState") => {
+    const orig = (history as any)[m];
+    (history as any)[m] = (state: any, title: string, url?: string | URL) => {
+      if (!url) return orig.call(history, state, title, url);
+      const u = new URL(url, baseUrl);
+      // store path-only to avoid exposing host
+      return orig.call(history, state, title, u.pathname + u.search + u.hash);
+    };
+  };
+  patch("pushState");
+  patch("replaceState");
+}, [baseUrl]);
+```
+
+### 4) CORS for RSC/Server Actions
+Allow sandboxed cross‑origin requests and handle preflight:
+```ts
+// middleware.ts (simplified example)
+import { NextResponse } from "next/server";
+export function middleware(req: Request) {
+  if (req.method === "OPTIONS") {
+    return new NextResponse(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
+    });
+  }
+  const res = NextResponse.next();
+  res.headers.set("Access-Control-Allow-Origin", "*");
+  return res;
+}
+```
+
+### 5) Hydration mismatch guard
+Parent frames may inject attributes into `<html>`. Guard against mismatches:
+```tsx
+// app/layout.tsx
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+### 6) External links should break out of the iframe
+Use ChatGPT’s bridge when available; otherwise, fall back:
+```ts
+// use-open-external.ts
+export function useOpenExternal() {
+  return (href: string) => {
+    if (typeof window !== "undefined" && (window as any)?.openai?.openExternal) {
+      try { (window as any).openai.openExternal({ href }); return; } catch {}
+    }
+    window.open(href, "_blank", "noopener,noreferrer");
+  };
+}
+```
+
+### 7) Borderless native look in ChatGPT
+Opt out of ChatGPT’s default wrapper card:
+```ts
+// app/mcp/route.ts when registering resource/response
+_meta: {
+  "openai/widgetDescription": "Your widget",
+  "openai/widgetPrefersBorder": false,
+}
+```
+
+### 8) Carousel UX inside narrow host columns
+- Use horizontal snap with hidden rails:
+  - `flex overflow-x-auto snap-x snap-mandatory gap-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`
+- Each card `shrink-0 snap-center` so it never collapses.
+
+These patches mirror the Vercel guide and have proven to eliminate the majority of iframe‑integration issues while preserving a native feel inside ChatGPT. [Source](https://vercel.com/blog/running-next-js-inside-chatgpt-a-deep-dive-into-native-app-integration)
+
 
