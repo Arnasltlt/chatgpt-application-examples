@@ -25,7 +25,7 @@ const handler = createMcpHandler(async (server) => {
       mimeType: "text/html+skybridge",
       _meta: {
         "openai/widgetDescription": "Render the AI Council widget",
-        "openai/widgetPrefersBorder": true,
+        "openai/widgetPrefersBorder": false,
       },
     },
     async (uri) => ({
@@ -36,7 +36,7 @@ const handler = createMcpHandler(async (server) => {
           text: await fetch(`${baseURL}/`).then((res) => res.text()),
           _meta: {
             "openai/widgetDescription": "Render the AI Council widget",
-            "openai/widgetPrefersBorder": true,
+            "openai/widgetPrefersBorder": false,
           },
         },
       ],
