@@ -4,6 +4,7 @@ import type { CouncilMember, CouncilResponse, CouncilResult } from "@/server/cou
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { useOpenAIGlobal, useOpenExternal, useWidgetProps } from "./hooks";
+import DOMPurify from "isomorphic-dompurify";
 
 const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
 
@@ -82,6 +83,15 @@ function LoadingState() {
 function CouncilMemberCard({ member, tokens }: { member: CouncilMember; tokens: ThemeTokens }) {
   const openExternal = useOpenExternal();
   const emoji = (member.emoji || "🤖").trim() || "🤖";
+  
+  // Sanitize HTML content to prevent XSS attacks
+  const sanitizedAdvice = useMemo(() => {
+    return DOMPurify.sanitize(member.advice, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'ul', 'ol', 'li', 'a'],
+      ALLOWED_ATTR: ['href', 'target', 'rel'],
+      ALLOW_DATA_ATTR: false,
+    });
+  }, [member.advice]);
 
   return (
     <article
@@ -110,7 +120,7 @@ function CouncilMemberCard({ member, tokens }: { member: CouncilMember; tokens: 
           </div>
         </div>
 
-        <p className={`text-sm leading-relaxed ${tokens.secondaryText}`}>{member.advice}</p>
+        <p className={`text-sm leading-relaxed ${tokens.secondaryText}`} dangerouslySetInnerHTML={{ __html: sanitizedAdvice }} />
 
         {member.ctaLabel && member.ctaUrl && (
           <button
